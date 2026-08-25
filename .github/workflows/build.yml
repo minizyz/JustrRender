@@ -5,6 +5,8 @@ on:
     branches: [ preview, main ]
   pull_request:
     branches: [ preview, main ]
+  # 增加手动触发，网页可以点击Run workflow
+  workflow_dispatch:
 
 env:
   ANDROID_COMPILE_SDK: 34
@@ -17,8 +19,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install dependencies
+      - name: Install system dependencies
         run: sudo apt update && sudo apt install -y wget unzip
+        shell: bash
 
       - name: Download Android NDK r25c
         run: |
@@ -31,9 +34,11 @@ jobs:
         run: |
           cd app/src/main/jni
           ndk-build NDK_PROJECT_PATH=. APP_BUILD_SCRIPT=./Android.mk NDK_APPLICATION_MK=./Application.mk
+        shell: bash
 
       - name: Copy compiled libs to jniLibs
         run: cp -r app/src/main/jni/libs/* app/src/main/jniLibs/
+        shell: bash
 
       - name: Upload native libraries
         uses: actions/upload-artifact@v4
@@ -60,15 +65,16 @@ jobs:
           java-version: '17'
           distribution: temurin
 
-      # 使用官方android sdk action，广泛兼容
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Grant execute permission
+      - name: Grant execute permission for gradlew
         run: chmod +x gradlew
+        shell: bash
 
       - name: Build Debug APK
         run: ./gradlew assembleDebug
+        shell: bash
 
       - name: Upload build artifact APK
         uses: actions/upload-artifact@v4
