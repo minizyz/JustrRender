@@ -5,7 +5,6 @@ on:
     branches: [ preview, main ]
   pull_request:
     branches: [ preview, main ]
-  # 增加手动触发，网页可以点击Run workflow
   workflow_dispatch:
 
 env:
@@ -100,5 +99,6 @@ jobs:
           tag_name: v${{ github.run_number }}
           name: JustrRender Release ${{ github.run_number }}
           generate_release_notes: true
-          files:
-            - app-debug.apk
+          # ✅修复这里：files是多行字符串，不要-短横线数组
+          files: |
+            app-debug.apk
