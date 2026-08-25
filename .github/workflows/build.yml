@@ -11,25 +11,28 @@ env:
   ANDROID_BUILD_TOOLS: 34.0.0
 
 jobs:
-  Build Native Libraries:
+  Build-Native-Libraries:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Download & Unpack Android NDK r25c
+      - name: Install dependencies
+        run: sudo apt update && sudo apt install -y wget unzip
+
+      - name: Download Android NDK r25c
         run: |
-          wget https://dl.google.com/android/repository/android-ndk-r25c-linux.zip
-          unzip -q android-ndk-r25c-linux.zip
+          wget -O ndk.zip https://dl.google.com/android/repository/android-ndk-r25c-linux.zip
+          unzip -q ndk.zip
           echo "$PWD/android-ndk-r25c" >> $GITHUB_PATH
         shell: bash
 
-      - name: Build native libraries
+      - name: Compile native code with ndk-build
         run: |
           cd app/src/main/jni
           ndk-build NDK_PROJECT_PATH=. APP_BUILD_SCRIPT=./Android.mk NDK_APPLICATION_MK=./Application.mk
 
-      - name: Copy libraries to jniLibs
+      - name: Copy compiled libs to jniLibs
         run: cp -r app/src/main/jni/libs/* app/src/main/jniLibs/
 
       - name: Upload native libraries
@@ -38,56 +41,54 @@ jobs:
           name: native-libs
           path: app/src/main/jniLibs
 
-  Build APK:
-    needs: Build Native Libraries
+  Build-APK:
+    needs: Build-Native-Libraries
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Download native libraries artifact
+      - name: Restore compiled native libs
         uses: actions/download-artifact@v4
         with:
           name: native-libs
           path: app/src/main/jniLibs
 
-      - name: Setup JDK 17
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
-          distribution: 'temurin'
+          distribution: temurin
 
+      # 使用官方android sdk action，广泛兼容
       - name: Setup Android SDK
-        uses: actions/setup-android-sdk@v1
-        with:
-          compile-sdk: ${{ env.ANDROID_COMPILE_SDK }}
-          build-tools: ${{ env.ANDROID_BUILD_TOOLS }}
+        uses: android-actions/setup-android@v3
 
-      - name: Grant execute permission for gradlew
+      - name: Grant execute permission
         run: chmod +x gradlew
 
       - name: Build Debug APK
         run: ./gradlew assembleDebug
 
-      - name: Upload Debug APK
+      - name: Upload build artifact APK
         uses: actions/upload-artifact@v4
         with:
           name: JustrRender-APK
           path: app/build/outputs/apk/debug/app-debug.apk
 
-  Create Release:
-    needs: Build APK
+  Create-Release:
+    needs: Build-APK
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - name: Download APK artifact
+      - name: Download APK
         uses: actions/download-artifact@v4
         with:
           name: JustrRender-APK
 
-      - name: Create GitHub Release
+      - name: Generate Github Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ github.run_number }}
