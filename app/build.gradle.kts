@@ -14,7 +14,7 @@ android {
         versionCode = 3
         versionName = "1.2.0"
     }
-
+    
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -66,6 +66,7 @@ android {
             useLegacyPackaging = true
         }
     }
+    ndkVersion = "25.2.9519653"
 }
 
 dependencies {
