@@ -1,20 +1,22 @@
 package com.justr.renderer
 
+import android.content.Intent
 import android.os.Bundle
+import android.widget.Button
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 
-/**
- * JustrRender 渲染器插件主 Activity
- *
- * 此 Activity 仅用于展示插件信息，实际渲染功能由原生库 libjustr_render.so 提供。
- * 双后端架构：优先使用 Vulkan，设备不支持时自动回退 OpenGL ES 3.0。
- * 安装此 APK 后，在 Fold Craft Launcher 的版本设置 → 渲染器中选择 "JustrRender" 即可启用。
- */
 class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        SettingsManager.init(this)
+
+        val layout = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(48, 48, 48, 48)
+        }
 
         val info = buildString {
             appendLine("JustrRender Renderer Plugin")
@@ -26,16 +28,19 @@ class MainActivity : AppCompatActivity() {
             appendLine("渲染后端: 双后端自动切换")
             appendLine("  优先: Vulkan (WSI Swapchain)")
             appendLine("  回退: OpenGL ES 3.0")
+            appendLine("超分辨率: FSR 1.0 (EASU + RCAS)")
             appendLine("原生库: libjustr_render.so")
             appendLine()
-            appendLine("环境变量:")
-            appendLine("  JUSTR_BACKEND=auto (默认)")
-            appendLine("  可选: vulkan / opengles")
+            appendLine("当前设置:")
+            appendLine("  后端: ${SettingsManager.backend.displayName}")
+            appendLine("  FSR: ${SettingsManager.fsrMode.displayName}")
+            appendLine("  VSync: ${if (SettingsManager.vsync) "开启" else "关闭"}")
+            appendLine("  MSAA: ${if (SettingsManager.msaa == 0) "关闭" else "${SettingsManager.msaa}x"}")
             appendLine()
             appendLine("使用方法:")
             appendLine("1. 确保已安装 Fold Craft Launcher")
             appendLine("2. 打开 FCL → 版本设置 → 渲染器")
-            appendLine("3. 选择 \"JustrRender (Vulkan+GLES)\"")
+            appendLine("3. 选择 \"JustrRender\"")
             appendLine("4. 启动游戏，自动选择最佳后端")
             appendLine()
             appendLine("注意: 此插件需配合 FCL 使用，单独打开无游戏功能。")
@@ -43,9 +48,30 @@ class MainActivity : AppCompatActivity() {
 
         val textView = TextView(this).apply {
             text = info
-            setPadding(48, 48, 48, 48)
-            textSize = 14f
+            textSize = 13f
         }
-        setContentView(textView)
+
+        val settingsButton = Button(this).apply {
+            text = "渲染器设置"
+            setOnClickListener {
+                startActivity(Intent(this@MainActivity, SettingsActivity::class.java))
+            }
+        }
+
+        layout.addView(textView)
+        layout.addView(
+            settingsButton,
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { topMargin = 32 }
+        )
+
+        setContentView(layout)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        recreate()
     }
 }
