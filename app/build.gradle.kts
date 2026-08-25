@@ -11,8 +11,8 @@ android {
         applicationId = "com.justr.renderer"
         minSdk = 26
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "1.1.0"
     }
 
     buildTypes {
@@ -28,25 +28,28 @@ android {
             resValue("string", "app_name", "JustrRender")
 
             // 渲染器在启动器内显示的名称
-            manifestPlaceholders["des"] = "JustrRender"
+            manifestPlaceholders["des"] = "JustrRender (Vulkan+GLES)"
 
             // 渲染器定义：名称:GL库名:EGL库名
-            // GL 库和 EGL 库可以是同一个 .so
+            // 双后端：Vulkan 优先，自动回退 GLES
             manifestPlaceholders["renderer"] = "JustrRender:libjustr_render.so:libjustr_render.so"
 
             // Boat 环境变量（旧版启动器兼容）
             // 格式：KEY=VALUE:KEY=VALUE
+            // JUSTR_BACKEND=auto: 优先 Vulkan，失败回退 GLES
             manifestPlaceholders["boatEnv"] = listOf(
                 "POJAV_RENDERER=opengles3",
                 "LIBGL_ES=3",
-                "LIBGL_NOINTOVLHACK=1"
+                "LIBGL_NOINTOVLHACK=1",
+                "JUSTR_BACKEND=auto"
             ).joinToString(":")
 
             // Pojav 环境变量
             manifestPlaceholders["pojavEnv"] = listOf(
                 "POJAV_RENDERER=opengles3",
                 "LIBGL_ES=3",
-                "LIBGL_NOINTOVLHACK=1"
+                "LIBGL_NOINTOVLHACK=1",
+                "JUSTR_BACKEND=auto"
             ).joinToString(":")
 
             // 最小支持的 MC 版本（空字符串表示不限制）
