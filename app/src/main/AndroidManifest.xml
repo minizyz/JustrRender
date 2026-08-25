@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-
     <application
         android:allowBackup="true"
         android:extractNativeLibs="true"
@@ -9,7 +8,6 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.JustrRender">
-
         <activity
             android:name=".MainActivity"
             android:exported="true">
@@ -18,42 +16,30 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <!-- FCL 渲染器插件标记 -->
+        <activity
+            android:name=".SettingsActivity"
+            android:exported="false"
+            android:label="渲染器设置" />
         <meta-data
             android:name="fclPlugin"
             android:value="true" />
-
-        <!-- 渲染器描述（在启动器中显示） -->
         <meta-data
             android:name="des"
             android:value="${des}" />
-
-        <!-- 渲染器定义：名称:GL库名:EGL库名 -->
         <meta-data
             android:name="renderer"
             android:value="${renderer}" />
-
-        <!-- Boat 环境变量 -->
         <meta-data
             android:name="boatEnv"
             android:value="${boatEnv}" />
-
-        <!-- Pojav 环境变量 -->
         <meta-data
             android:name="pojavEnv"
             android:value="${pojavEnv}" />
-
-        <!-- 最小支持 MC 版本 -->
         <meta-data
             android:name="minMCVer"
             android:value="${minMCVer}" />
-
-        <!-- 最大支持 MC 版本 -->
         <meta-data
             android:name="maxMCVer"
             android:value="${maxMCVer}" />
-
     </application>
-
 </manifest>
