@@ -3,10 +3,11 @@
  * Native renderer with dual-backend support: Vulkan (preferred)
  * with automatic fallback to OpenGL ES 3.0.
  *
- * This library provides EGL context management, Vulkan WSI support,
- * and automatic backend selection for Minecraft: Java Edition on Android.
+ * Features:
+ *   - Dual-backend: Vulkan WSI + OpenGL ES (auto fallback)
+ *   - FSR 1.0: spatial upscaling (EASU) + sharpening (RCAS)
+ *   - VSync control, MSAA, custom render scale
  */
-
 #ifndef JUSTR_RENDER_H
 #define JUSTR_RENDER_H
 
@@ -18,37 +19,29 @@
 #include <stdint.h>
 
 #include "vulkan_render.h"
+#include "fsr_render.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* Renderer version */
-#define JUSTR_RENDER_VERSION "1.1.0"
+#define JUSTR_RENDER_VERSION "1.2.0"
 #define JUSTR_RENDERER_ID "justr_render"
-
-/* Maximum number of EGL configs to enumerate */
 #define JUSTR_MAX_CONFIGS 64
 
-/* === Backend Selection === */
-
 typedef enum {
-    JUSTR_BACKEND_AUTO = 0,    /* Try Vulkan first, fallback to GLES */
-    JUSTR_BACKEND_VULKAN,      /* Force Vulkan, fail if unavailable */
-    JUSTR_BACKEND_OPENGLES,    /* Force OpenGL ES */
+    JUSTR_BACKEND_AUTO = 0,
+    JUSTR_BACKEND_VULKAN,
+    JUSTR_BACKEND_OPENGLES,
 } justr_backend_t;
 
-/* Active backend state */
 typedef enum {
     JUSTR_BACKEND_NONE = 0,
     JUSTR_BACKEND_ACTIVE_VULKAN,
     JUSTR_BACKEND_ACTIVE_OPENGLES,
 } justr_active_backend_t;
 
-/* === Renderer Context === */
-
 typedef struct {
-    /* --- OpenGL ES backend state --- */
     EGLDisplay display;
     EGLConfig config;
     EGLContext context;
@@ -65,43 +58,40 @@ typedef struct {
     int sample_buffers;
     int samples;
 
-    /* --- Backend management --- */
-    justr_backend_t requested_backend;   /* What the user asked for */
-    justr_active_backend_t active_backend; /* What is actually running */
+    justr_backend_t requested_backend;
+    justr_active_backend_t active_backend;
     bool initialized;
     bool vsync;
-    bool vulkan_available;               /* Cached probe result */
+    bool vulkan_available;
+
+    justr_fsr_context_t fsr;
+    bool fsr_enabled;
+    justr_fsr_mode_t fsr_mode;
+    float fsr_sharpening;
+    float custom_scale;
+
+    bool debug_log;
 } justr_render_context_t;
 
-/* Global renderer instance */
 extern justr_render_context_t g_justr_ctx;
 
-/* === Backend Selection API === */
-
-/* Set preferred backend (call before init) */
 void justr_set_backend(justr_backend_t backend);
-
-/* Get currently active backend */
 justr_active_backend_t justr_get_active_backend(void);
-
-/* Get backend name string */
 const char *justr_get_backend_name(void);
-
-/* Probe if Vulkan is available (cached) */
 bool justr_is_vulkan_available(void);
 
-/* === Unified Renderer API === */
-
-/* Initialize renderer with automatic backend selection */
 EGLBoolean justr_render_init(ANativeWindow *window);
-
-/* Terminate renderer (any backend) */
 void justr_render_terminate(void);
-
-/* Swap buffers (works for both backends) */
 EGLBoolean justr_render_swap_buffers(void);
 
-/* === EGL Bridge Functions (GLES backend) === */
+void justr_set_fsr_mode(justr_fsr_mode_t mode);
+justr_fsr_mode_t justr_get_fsr_mode(void);
+const char *justr_get_fsr_mode_name(void);
+void justr_set_fsr_sharpening(float amount);
+float justr_get_fsr_sharpening(void);
+void justr_set_custom_scale(float scale);
+float justr_get_custom_scale(void);
+void justr_get_render_resolution(int *width, int *height);
 
 EGLBoolean justr_egl_init(ANativeWindow *window);
 EGLContext justr_egl_create_context(EGLDisplay display, EGLConfig config,
@@ -118,13 +108,9 @@ EGLBoolean justr_egl_destroy_context(EGLDisplay display, EGLContext context);
 EGLBoolean justr_egl_destroy_surface(EGLDisplay display, EGLSurface surface);
 void justr_egl_terminate(void);
 
-/* === Info Queries === */
-
 const char *justr_get_renderer_string(void);
 const char *justr_get_version_string(void);
 const char *justr_get_vendor_string(void);
-
-/* === Utility Functions === */
 
 bool justr_check_egl_error(const char *operation);
 bool justr_check_gl_error(const char *operation);
@@ -136,4 +122,4 @@ bool justr_get_vsync(void);
 }
 #endif
 
-#endif /* JUSTR_RENDER_H */
+#endif
