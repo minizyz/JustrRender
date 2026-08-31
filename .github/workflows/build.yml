@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 env:
-  ANDROID_COMPILE_SDK: "34"
+  ANDROID_COMPILE_SDK: "35"
   ANDROID_BUILD_TOOLS: "34.0.0"
 
 jobs:
@@ -89,7 +89,7 @@ jobs:
         run: |
           mkdir -p gradle/wrapper
           curl -sL -o gradle/wrapper/gradle-wrapper.jar \
-            "https://raw.githubusercontent.com/gradle/gradle/v8.5.0/gradle/wrapper/gradle-wrapper.jar"
+            "https://raw.githubusercontent.com/gradle/gradle/v8.7.0/gradle/wrapper/gradle-wrapper.jar"
           ls -la gradle/wrapper/gradle-wrapper.jar
           file gradle/wrapper/gradle-wrapper.jar
         shell: bash
