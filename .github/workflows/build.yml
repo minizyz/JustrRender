@@ -39,10 +39,11 @@ jobs:
 
       - name: Copy libraries to jniLibs
         run: |
-          # ndk-build outputs to app/src/main/jni/libs/ (relative to NDK_PROJECT_PATH)
+          # ndk-build 在 app/src/main/jni 目录运行，输出在 app/src/main/jni/libs/
           mkdir -p app/src/main/jniLibs
           cp -r app/src/main/jni/libs/* app/src/main/jniLibs/
-          ls -R app/src/main/jniLibs/
+          echo "=== jniLibs contents ==="
+          ls -laR app/src/main/jniLibs/
         shell: bash
 
       - name: Upload native libraries
