@@ -4,7 +4,7 @@ plugins {
 }
 android {
     namespace = "com.justr.renderer"
-    compileSdk = 35
+    compileSdk = 37
     defaultConfig {
         applicationId = "com.justr.renderer"
         minSdk = 26
