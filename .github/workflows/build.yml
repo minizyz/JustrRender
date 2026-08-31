@@ -85,6 +85,15 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
+      - name: Download gradle-wrapper.jar
+        run: |
+          mkdir -p gradle/wrapper
+          curl -sL -o gradle/wrapper/gradle-wrapper.jar \
+            "https://raw.githubusercontent.com/gradle/gradle/v8.5.0/gradle/wrapper/gradle-wrapper.jar"
+          ls -la gradle/wrapper/gradle-wrapper.jar
+          file gradle/wrapper/gradle-wrapper.jar
+        shell: bash
+
       - name: Make gradlew executable
         run: chmod +x ./gradlew
         shell: bash
