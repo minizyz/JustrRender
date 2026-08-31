@@ -4,7 +4,7 @@ plugins {
 }
 android {
     namespace = "com.justr.renderer"
-    compileSdk = 37
+    compileSdk = 36
     defaultConfig {
         applicationId = "com.justr.renderer"
         minSdk = 26
@@ -73,6 +73,6 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     debugImplementation("androidx.compose.ui:ui-tooling")
     // Miuix - MIUI 风格 Compose UI 库
-    implementation("top.yukonga.miuix.kmp:miuix-ui-android:0.9.2")
-    implementation("top.yukonga.miuix.kmp:miuix-preference-android:0.9.2")
+    implementation("top.yukonga.miuix.kmp:miuix-ui-android:0.9.1")
+    implementation("top.yukonga.miuix.kmp:miuix-preference-android:0.9.1")
 }
