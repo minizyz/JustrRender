@@ -39,12 +39,10 @@ jobs:
 
       - name: Copy libraries to jniLibs
         run: |
-          mkdir -p app/src/main/jniLibs/arm64-v8a
-          mkdir -p app/src/main/jniLibs/armeabi-v7a
-          mkdir -p app/src/main/jniLibs/x86_64
-          cp app/src/main/libs/arm64-v8a/libjustr_render.so app/src/main/jniLibs/arm64-v8a/
-          cp app/src/main/libs/armeabi-v7a/libjustr_render.so app/src/main/jniLibs/armeabi-v7a/
-          cp app/src/main/libs/x86_64/libjustr_render.so app/src/main/jniLibs/x86_64/
+          # ndk-build outputs to app/src/main/jni/libs/ (relative to NDK_PROJECT_PATH)
+          mkdir -p app/src/main/jniLibs
+          cp -r app/src/main/jni/libs/* app/src/main/jniLibs/
+          ls -R app/src/main/jniLibs/
         shell: bash
 
       - name: Upload native libraries

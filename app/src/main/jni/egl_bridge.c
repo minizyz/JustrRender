@@ -83,10 +83,12 @@ EGLBoolean pojav_egl_destroy_surface(EGLSurface surface) {
     return justr_egl_destroy_surface(g_justr_ctx.display, surface);
 }
 
+/* === Renderer Info === */
+
 const char *pojav_get_renderer_name(void) {
     static char name[256];
-    const char *backend = justr_get_backend_name();
     const char *fsr = justr_get_fsr_mode_name();
+
     if (justr_get_active_backend() == JUSTR_BACKEND_ACTIVE_VULKAN) {
         snprintf(name, sizeof(name), "JustrRender (Vulkan - %s)",
                  g_justr_vk.device_name[0] ? g_justr_vk.device_name : "Device");
