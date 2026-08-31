@@ -9,7 +9,7 @@ android {
         applicationId = "com.justr.renderer"
         minSdk = 26
         targetSdk = 35
-        compileSdk = 37
+        compileSdk = 36
         versionCode = 3
         versionName = "1.2.0"
     }
