@@ -21,7 +21,6 @@ import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TopAppBar
 import top.yukonga.miuix.kmp.preference.CheckboxPreference
-import top.yukonga.miuix.kmp.preference.PreferenceRow
 import top.yukonga.miuix.kmp.preference.SwitchPreference
 import top.yukonga.miuix.kmp.theme.ColorSchemeMode
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -84,7 +83,7 @@ fun SettingsScreen(onBack: () -> Unit) {
 }
 
 /**
- * 自定义滑块设置项（替代 miuix-kmp 0.9.1 中移除的 SliderPreference）
+ * 自定义滑块设置项（不依赖 miuix-kmp 内部 API，使用纯 Compose 组件）
  */
 @Composable
 fun CustomSliderPreference(
@@ -95,27 +94,26 @@ fun CustomSliderPreference(
     valueRange: ClosedFloatingPointRange<Float>,
     modifier: Modifier = Modifier
 ) {
-    PreferenceRow(
-        title = title,
+    Column(
         modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        verticalArrangement = Arrangement.Center
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp),
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = summary,
-                modifier = Modifier.padding(bottom = 4.dp)
-            )
-            Slider(
-                value = value,
-                onValueChange = { v -> onValueChange(v) },
-                valueRange = valueRange,
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
+        Text(
+            text = title,
+            modifier = Modifier.padding(bottom = 2.dp)
+        )
+        Text(
+            text = summary,
+            modifier = Modifier.padding(bottom = 4.dp)
+        )
+        Slider(
+            value = value,
+            onValueChange = { v -> onValueChange(v) },
+            valueRange = valueRange,
+            modifier = Modifier.fillMaxWidth()
+        )
     }
 }
 
@@ -208,8 +206,7 @@ fun FsrSection() {
                         sharpening = v
                         SettingsManager.fsrSharpening = v
                     },
-                    valueRange = 0f..1f,
-                    modifier = Modifier.padding(top = 8.dp)
+                    valueRange = 0f..1f
                 )
             }
         }
@@ -330,8 +327,7 @@ fun AdvancedSection() {
                     customScale = v
                     SettingsManager.customScale = v
                 },
-                valueRange = 0.5f..1.5f,
-                modifier = Modifier.padding(vertical = 8.dp)
+                valueRange = 0.5f..1.5f
             )
             SwitchPreference(
                 title = "调试日志",
