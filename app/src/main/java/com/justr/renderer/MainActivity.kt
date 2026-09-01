@@ -10,7 +10,8 @@ import androidx.appcompat.app.AppCompatActivity
 class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+        Text(text="test")
+       /* super.onCreate(savedInstanceState)
         SettingsManager.init(this)
 
         val layout = LinearLayout(this).apply {
@@ -68,7 +69,7 @@ class MainActivity : AppCompatActivity() {
         )
 
         setContentView(layout)
-    }
+    */}
 
     override fun onResume() {
         super.onResume()
