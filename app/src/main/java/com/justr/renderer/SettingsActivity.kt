@@ -6,28 +6,37 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Slider
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import top.yukonga.miuix.kmp.basic.Scaffold
-import top.yukonga.miuix.kmp.basic.TopAppBar
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.theme.MiuixTheme
-import top.yukonga.miuix.kmp.theme.ThemeController
-import top.yukonga.miuix.kmp.theme.ColorSchemeMode
-import top.yukonga.miuix.kmp.preference.SwitchPreference
-import top.yukonga.miuix.kmp.preference.CheckboxPreference
-import top.yukonga.miuix.kmp.preference.SliderPreference
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.Button
-import androidx.compose.ui.Alignment
+import top.yukonga.miuix.kmp.basic.Scaffold
+import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.basic.TopAppBar
+import top.yukonga.miuix.kmp.preference.CheckboxPreference
+import top.yukonga.miuix.kmp.preference.PreferenceRow
+import top.yukonga.miuix.kmp.preference.SwitchPreference
+import top.yukonga.miuix.kmp.theme.ColorSchemeMode
+import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.yukonga.miuix.kmp.theme.ThemeController
 
+/**
+ * JustrRender 设置界面
+ *
+ * 使用 Miuix (MIUI 风格) Preference 组件构建。
+ * 所有设置实时保存到 SharedPreferences，下次启动游戏时生效。
+ */
 class SettingsActivity : ComponentActivity() {
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         SettingsManager.init(this)
-
         setContent {
             val controller = remember { ThemeController(ColorSchemeMode.System) }
             MiuixTheme(controller = controller) {
@@ -45,7 +54,14 @@ fun SettingsScreen(onBack: () -> Unit) {
         topBar = {
             TopAppBar(
                 title = "JustrRender 设置",
-                onBack = onBack
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "返回"
+                        )
+                    }
+                }
             )
         }
     ) { padding ->
@@ -67,6 +83,43 @@ fun SettingsScreen(onBack: () -> Unit) {
     }
 }
 
+/**
+ * 自定义滑块设置项（替代 miuix-kmp 0.9.1 中移除的 SliderPreference）
+ */
+@Composable
+fun CustomSliderPreference(
+    title: String,
+    summary: String,
+    value: Float,
+    onValueChange: (Float) -> Unit,
+    valueRange: ClosedFloatingPointRange<Float>,
+    modifier: Modifier = Modifier
+) {
+    PreferenceRow(
+        title = title,
+        modifier = modifier
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp),
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = summary,
+                modifier = Modifier.padding(bottom = 4.dp)
+            )
+            Slider(
+                value = value,
+                onValueChange = { v -> onValueChange(v) },
+                valueRange = valueRange,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+    }
+}
+
+// ===== 渲染后端设置 =====
 @Composable
 fun RenderBackendSection() {
     var backend by remember { mutableStateOf(SettingsManager.backend) }
@@ -85,7 +138,6 @@ fun RenderBackendSection() {
                 text = "选择图形 API，自动模式优先使用 Vulkan",
                 modifier = Modifier.padding(bottom = 12.dp)
             )
-
             backendOptions.forEachIndexed { index, option ->
                 CheckboxPreference(
                     title = option.displayName,
@@ -107,6 +159,7 @@ fun RenderBackendSection() {
     }
 }
 
+// ===== FSR1 超分辨率设置 =====
 @Composable
 fun FsrSection() {
     var fsrMode by remember { mutableStateOf(SettingsManager.fsrMode) }
@@ -126,7 +179,6 @@ fun FsrSection() {
                 text = "AMD FidelityFX Super Resolution，降低渲染分辨率后放大以提升帧率",
                 modifier = Modifier.padding(bottom = 12.dp)
             )
-
             fsrOptions.forEachIndexed { index, option ->
                 CheckboxPreference(
                     title = option.displayName,
@@ -146,16 +198,15 @@ fun FsrSection() {
                     }
                 )
             }
-
             if (fsrMode != SettingsManager.FsrMode.OFF) {
                 Spacer(modifier = Modifier.height(8.dp))
-                SliderPreference(
+                CustomSliderPreference(
                     title = "锐化强度",
                     summary = "FSR RCAS 锐化强度：%.0f%%".format(sharpening * 100),
                     value = sharpening,
-                    onValueChange = {
-                        sharpening = it
-                        SettingsManager.fsrSharpening = it
+                    onValueChange = { v ->
+                        sharpening = v
+                        SettingsManager.fsrSharpening = v
                     },
                     valueRange = 0f..1f,
                     modifier = Modifier.padding(top = 8.dp)
@@ -165,6 +216,7 @@ fun FsrSection() {
     }
 }
 
+// ===== 画质设置 =====
 @Composable
 fun QualitySection() {
     var msaa by remember { mutableStateOf(SettingsManager.msaa) }
@@ -179,7 +231,6 @@ fun QualitySection() {
                 text = "画质设置",
                 modifier = Modifier.padding(bottom = 8.dp)
             )
-
             Text(
                 text = "MSAA 多重采样抗锯齿",
                 modifier = Modifier.padding(bottom = 4.dp)
@@ -188,7 +239,6 @@ fun QualitySection() {
                 text = "更高的采样数带来更平滑的边缘，但会增加性能开销",
                 modifier = Modifier.padding(bottom = 12.dp)
             )
-
             msaaOptions.forEachIndexed { index, samples ->
                 CheckboxPreference(
                     title = if (samples == 0) "关闭" else "${samples}x MSAA",
@@ -212,6 +262,7 @@ fun QualitySection() {
     }
 }
 
+// ===== 显示设置 =====
 @Composable
 fun DisplaySection() {
     var vsync by remember { mutableStateOf(SettingsManager.vsync) }
@@ -226,40 +277,38 @@ fun DisplaySection() {
                 text = "显示设置",
                 modifier = Modifier.padding(bottom = 8.dp)
             )
-
             SwitchPreference(
                 title = "垂直同步 (VSync)",
                 summary = "锁定帧率到屏幕刷新率，减少画面撕裂",
                 checked = vsync,
-                onCheckedChange = {
-                    vsync = it
-                    SettingsManager.vsync = it
+                onCheckedChange = { checked ->
+                    vsync = checked
+                    SettingsManager.vsync = checked
                 }
             )
-
             SwitchPreference(
                 title = "强制高刷新率",
                 summary = "尝试使用设备支持的最高刷新率（需要设备支持）",
                 checked = forceHighRefresh,
-                onCheckedChange = {
-                    forceHighRefresh = it
-                    SettingsManager.forceHighRefresh = it
+                onCheckedChange = { checked ->
+                    forceHighRefresh = checked
+                    SettingsManager.forceHighRefresh = checked
                 }
             )
-
             SwitchPreference(
                 title = "保持屏幕常亮",
                 summary = "游戏运行时防止屏幕自动关闭",
                 checked = keepAwake,
-                onCheckedChange = {
-                    keepAwake = it
-                    SettingsManager.keepAwake = it
+                onCheckedChange = { checked ->
+                    keepAwake = checked
+                    SettingsManager.keepAwake = checked
                 }
             )
         }
     }
 }
 
+// ===== 高级设置 =====
 @Composable
 fun AdvancedSection() {
     var customScale by remember { mutableStateOf(SettingsManager.customScale) }
@@ -273,32 +322,31 @@ fun AdvancedSection() {
                 text = "高级设置",
                 modifier = Modifier.padding(bottom = 8.dp)
             )
-
-            SliderPreference(
+            CustomSliderPreference(
                 title = "自定义渲染缩放",
                 summary = "渲染分辨率缩放：%.0f%%（FSR 关闭时生效）".format(customScale * 100),
                 value = customScale,
-                onValueChange = {
-                    customScale = it
-                    SettingsManager.customScale = it
+                onValueChange = { v ->
+                    customScale = v
+                    SettingsManager.customScale = v
                 },
                 valueRange = 0.5f..1.5f,
                 modifier = Modifier.padding(vertical = 8.dp)
             )
-
             SwitchPreference(
                 title = "调试日志",
                 summary = "输出详细的渲染器调试信息到 logcat",
                 checked = debugLog,
-                onCheckedChange = {
-                    debugLog = it
-                    SettingsManager.debugLog = it
+                onCheckedChange = { checked ->
+                    debugLog = checked
+                    SettingsManager.debugLog = checked
                 }
             )
         }
     }
 }
 
+// ===== 重置按钮 =====
 @Composable
 fun ResetButton() {
     var showConfirm by remember { mutableStateOf(false) }
