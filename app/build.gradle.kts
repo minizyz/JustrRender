@@ -1,5 +1,6 @@
 plugins {
     id("com.android.application")
+    id("org.jetbrains.kotlin.plugin.compose") //新增这一行
 }
 android {
     namespace = "com.justr.renderer"
