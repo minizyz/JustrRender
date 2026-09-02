@@ -9,8 +9,9 @@ import androidx.appcompat.app.AppCompatActivity
 
 class MainActivity : AppCompatActivity() {
 
+    private lateinit var textView: TextView
+
     override fun onCreate(savedInstanceState: Bundle?) {
-       
         super.onCreate(savedInstanceState)
         SettingsManager.init(this)
 
@@ -19,7 +20,36 @@ class MainActivity : AppCompatActivity() {
             setPadding(48, 48, 48, 48)
         }
 
-        val info = buildString {
+        textView = TextView(this).apply {
+            text = buildInfoText()
+            textSize = 13f
+            // 开启滚动，防止内容过长屏幕溢出
+            isScrollContainer = true
+            setHorizontallyScrolling(false)
+        }
+
+        val settingsButton = Button(this).apply {
+            text = "渲染器设置"
+            setOnClickListener {
+                startActivity(Intent(this@MainActivity, SettingsActivity::class.java))
+            }
+        }
+
+        layout.addView(textView)
+        layout.addView(
+            settingsButton,
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { topMargin = 32 }
+        )
+
+        setContentView(layout)
+    }
+
+    /** 构建页面显示的全部信息文本，抽成独立方法方便刷新 */
+    private fun buildInfoText(): String {
+        return buildString {
             appendLine("JustrRender Renderer Plugin")
             appendLine("============================")
             appendLine()
@@ -46,33 +76,11 @@ class MainActivity : AppCompatActivity() {
             appendLine()
             appendLine("注意: 此插件需配合 FCL 使用，单独打开无游戏功能。")
         }
-
-        val textView = TextView(this).apply {
-            text = info
-            textSize = 13f
-        }
-
-        val settingsButton = Button(this).apply {
-            text = "渲染器设置"
-            setOnClickListener {
-                startActivity(Intent(this@MainActivity, SettingsActivity::class.java))
-            }
-        }
-
-        layout.addView(textView)
-        layout.addView(
-            settingsButton,
-            LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { topMargin = 32 }
-        )
-
-        setContentView(layout)
     }
 
     override fun onResume() {
         super.onResume()
-        recreate()
+        // 从设置页面返回，只更新文本，不重建Activity
+        textView.text = buildInfoText()
     }
-}
+                       }
