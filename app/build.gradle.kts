@@ -31,13 +31,13 @@ android {
                 "POJAV_RENDERER=opengles3",
                 "LIBGL_ES=3",
                 "LIBGL_NOINTOVLHACK=1",
-                "JUSTR_BACKEND=auto"
+                "JUSTR_BACKEND=opengles"
             ).joinToString(":")
             manifestPlaceholders["pojavEnv"] = listOf(
                 "POJAV_RENDERER=opengles3",
                 "LIBGL_ES=3",
                 "LIBGL_NOINTOVLHACK=1",
-                "JUSTR_BACKEND=auto"
+                "JUSTR_BACKEND=opengles"
             ).joinToString(":")
             manifestPlaceholders["minMCVer"] = ""
             manifestPlaceholders["maxMCVer"] = ""
