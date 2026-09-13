@@ -2,11 +2,8 @@
  * JustrRender - EGL Bridge for Fold Craft Launcher
  *
  * Provides the EGL function interface expected by FCL's native runtime.
- * Supports dual-backend: OpenGL ES (default, stable) with experimental Vulkan support.
+ * Supports dual-backend: Vulkan (preferred) with automatic GLES fallback.
  * FSR 1.0 super resolution is available on the GLES backend.
- *
- * FCL loads this library and calls these functions to manage rendering.
- * The bridge dispatches to the active backend (Vulkan or GLES).
  */
 
 #include "justr_render.h"
@@ -20,8 +17,6 @@
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 #define LOGW(...) __android_log_print(ANDROID_LOG_WARN, LOG_TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
-
-/* === Window Management === */
 
 static ANativeWindow *g_native_window = NULL;
 
@@ -37,19 +32,17 @@ ANativeWindow *pojav_get_native_window(void) {
     return g_native_window;
 }
 
-/* === EGL Context Management (FCL-compatible wrappers) === */
-
 EGLBoolean pojav_egl_make_current(EGLSurface surface, EGLContext context) {
     if (justr_get_active_backend() == JUSTR_BACKEND_ACTIVE_VULKAN) {
-        LOGI("Vulkan backend: make_current is no-op");
+        LOGW("Vulkan backend: eglMakeCurrent is no-op (GLES bridge not implemented)");
         return EGL_TRUE;
     }
-    LOGI("pojav_egl_make_current: surface=%p context=%p", surface, context);
-    EGLBoolean result = justr_egl_make_current(g_justr_ctx.display, surface, surface, context);
-    if (result == EGL_TRUE && surface != EGL_NO_SURFACE) {
-        g_justr_ctx.surface = surface;
+    EGLBoolean r = justr_egl_make_current(g_justr_ctx.display, surface, surface, context);
+    if (!r) {
+        LOGE("eglMakeCurrent FAILED: display=%p surface=%p context=%p error=0x%x",
+             g_justr_ctx.display, surface, context, eglGetError());
     }
-    return result;
+    return r;
 }
 
 EGLBoolean pojav_egl_swap_buffers(EGLSurface surface) {
@@ -63,17 +56,15 @@ EGLBoolean pojav_egl_swap_interval(EGLint interval) {
 
 EGLContext pojav_egl_create_context(EGLContext shared_context) {
     if (justr_get_active_backend() == JUSTR_BACKEND_ACTIVE_VULKAN) {
-        LOGI("Vulkan backend: returning dummy EGLContext handle");
+        LOGW("Vulkan backend: returning dummy EGLContext (GLES bridge not implemented)");
         return (EGLContext)0x1;
     }
-    LOGI("pojav_egl_create_context: shared=%p", shared_context);
     EGLContext ctx = justr_egl_create_context(g_justr_ctx.display, g_justr_ctx.config,
-                                    shared_context, NULL);
-    if (ctx != EGL_NO_CONTEXT) {
-        g_justr_ctx.context = ctx;
-        LOGI("EGL context created: %p", ctx);
+                                              shared_context, NULL);
+    if (ctx == EGL_NO_CONTEXT) {
+        LOGE("eglCreateContext FAILED: error=0x%x", eglGetError());
     } else {
-        LOGE("Failed to create EGL context");
+        LOGI("eglCreateContext OK: %p", ctx);
     }
     return ctx;
 }
@@ -127,7 +118,6 @@ const char *pojav_get_renderer_name(void) {
     } else {
         snprintf(name, sizeof(name), "JustrRender (Vulkan+GLES, FSR: %s)", fsr);
     }
-    LOGI("pojav_get_renderer_name: %s", name);
     return name;
 }
 
@@ -135,11 +125,8 @@ const char *pojav_get_renderer_version(void) {
     return JUSTR_RENDER_VERSION;
 }
 
-/* === GL Function Loader === */
-
 void *pojav_get_proc_address(const char *name) {
     if (name == NULL) return NULL;
-
     if (justr_get_active_backend() == JUSTR_BACKEND_ACTIVE_VULKAN) {
         static void *gles_handle = NULL;
         if (gles_handle == NULL) {
@@ -148,17 +135,11 @@ void *pojav_get_proc_address(const char *name) {
                 gles_handle = dlopen("libGLESv2.so", RTLD_NOW | RTLD_GLOBAL);
             }
         }
-        if (gles_handle != NULL) {
-            return dlsym(gles_handle, name);
-        }
+        if (gles_handle != NULL) return dlsym(gles_handle, name);
         return NULL;
     }
-
     void *proc = (void *)eglGetProcAddress(name);
-    if (proc != NULL) {
-        return proc;
-    }
-
+    if (proc != NULL) return proc;
     static void *gles_handle = NULL;
     if (gles_handle == NULL) {
         gles_handle = dlopen("libGLESv3.so", RTLD_NOW | RTLD_GLOBAL);
@@ -166,14 +147,9 @@ void *pojav_get_proc_address(const char *name) {
             gles_handle = dlopen("libGLESv2.so", RTLD_NOW | RTLD_GLOBAL);
         }
     }
-    if (gles_handle != NULL) {
-        proc = dlsym(gles_handle, name);
-    }
-
+    if (gles_handle != NULL) proc = dlsym(gles_handle, name);
     return proc;
 }
-
-/* === Lifecycle === */
 
 void pojav_renderer_start(void) {
     LOGI("pojav_renderer_start");
@@ -194,9 +170,7 @@ void pojav_surface_changed(int width, int height) {
     LOGI("pojav_surface_changed: %dx%d", width, height);
     g_justr_ctx.width = width;
     g_justr_ctx.height = height;
-
     if (justr_get_active_backend() == JUSTR_BACKEND_ACTIVE_VULKAN) {
-        LOGI("Vulkan: recreating swapchain for new size %dx%d", width, height);
         justr_vk_destroy_swapchain();
         justr_vk_create_swapchain();
     } else if (g_justr_ctx.display != EGL_NO_DISPLAY &&
@@ -211,12 +185,8 @@ void pojav_surface_changed(int width, int height) {
     }
 }
 
-/* === FSR Control (exported for JNI / runtime control) === */
-
 void justr_bridge_set_fsr_mode(int mode) {
-    justr_fsr_mode_t fsr_mode = (justr_fsr_mode_t)mode;
-    justr_set_fsr_mode(fsr_mode);
-    LOGI("FSR mode changed via bridge: %s", justr_fsr_get_mode_name(fsr_mode));
+    justr_set_fsr_mode((justr_fsr_mode_t)mode);
 }
 
 int justr_bridge_get_fsr_mode(void) {

@@ -314,18 +314,24 @@ EGLBoolean justr_render_init(ANativeWindow *window) {
          g_justr_ctx.vsync, g_justr_ctx.samples);
 
     g_justr_ctx.vulkan_available = justr_vk_probe();
-    bool try_vk = (g_justr_ctx.requested_backend == JUSTR_BACKEND_AUTO && g_justr_ctx.vulkan_available)
-                  || (g_justr_ctx.requested_backend == JUSTR_BACKEND_VULKAN);
+    /* AUTO 模式优先使用 GLES：Vulkan 后端当前仅实现 swapchain，
+       未提供 GLES context 桥接，Minecraft 渲染会报 "No context is current"。
+       待实现 Vulkan-GLES 互操作后可恢复 Vulkan 优先。 */
+    bool try_vk = (g_justr_ctx.requested_backend == JUSTR_BACKEND_VULKAN);
 
     if (try_vk && justr_vk_init(window)) {
         g_justr_ctx.active_backend = JUSTR_BACKEND_ACTIVE_VULKAN;
         g_justr_ctx.initialized = true;
         justr_vk_get_extent(&g_justr_ctx.width, &g_justr_ctx.height);
-        LOGI("=== Vulkan ACTIVE (%s) ===", g_justr_vk.device_name);
+        LOGW("=== Vulkan ACTIVE (%s) — WARNING: GLES bridge not implemented, games may fail ===",
+             g_justr_vk.device_name);
         return EGL_TRUE;
     }
-    if (g_justr_ctx.requested_backend == JUSTR_BACKEND_VULKAN) return EGL_FALSE;
-    if (try_vk) LOGI("Vulkan failed, fallback to GLES");
+    if (g_justr_ctx.requested_backend == JUSTR_BACKEND_VULKAN) {
+        LOGW("Vulkan forced but failed, fallback to GLES");
+    } else if (g_justr_ctx.vulkan_available) {
+        LOGI("Vulkan available but AUTO mode uses GLES (Vulkan-GLES bridge pending)");
+    }
 
     if (justr_egl_init(window)) {
         LOGI("=== OpenGL ES ACTIVE ===");
