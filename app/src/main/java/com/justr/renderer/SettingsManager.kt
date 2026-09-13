@@ -3,10 +3,24 @@ package com.justr.renderer
 import android.content.Context
 import android.content.SharedPreferences
 
+/**
+ * JustrRender 设置管理器
+ *
+ * 管理渲染器的所有可配置选项，包括：
+ * - 渲染后端选择（自动/Vulkan/OpenGL ES）
+ * - FSR1 超分辨率模式
+ * - VSync 开关
+ * - MSAA 抗锯齿
+ * - 其他渲染优化选项
+ *
+ * 设置通过 SharedPreferences 持久化，并在渲染器初始化时通过
+ * 环境变量或 JNI 接口传递给原生层。
+ */
 object SettingsManager {
 
     private const val PREFS_NAME = "justr_render_settings"
 
+    // ===== 设置键名 =====
     const val KEY_BACKEND = "backend"
     const val KEY_FSR_MODE = "fsr_mode"
     const val KEY_FSR_SHARPENING = "fsr_sharpening"
@@ -17,7 +31,8 @@ object SettingsManager {
     const val KEY_DEBUG_LOG = "debug_log"
     const val KEY_CUSTOM_SCALE = "custom_scale"
 
-    const val DEFAULT_BACKEND = "auto"
+    // ===== 默认值 =====
+    const val DEFAULT_BACKEND = "opengles"
     const val DEFAULT_FSR_MODE = "off"
     const val DEFAULT_FSR_SHARPENING = 0.5f
     const val DEFAULT_VSYNC = true
@@ -27,6 +42,7 @@ object SettingsManager {
     const val DEFAULT_DEBUG_LOG = false
     const val DEFAULT_CUSTOM_SCALE = 1.0f
 
+    // ===== FSR 模式定义 =====
     enum class FsrMode(val key: String, val displayName: String, val scaleFactor: Float) {
         OFF("off", "关闭", 1.0f),
         ULTRA_QUALITY("ultra_quality", "极致画质", 1.3f),
@@ -41,18 +57,20 @@ object SettingsManager {
         }
     }
 
+    // ===== 后端定义 =====
     enum class Backend(val key: String, val displayName: String) {
-        AUTO("auto", "自动（优先 Vulkan）"),
-        VULKAN("vulkan", "Vulkan"),
+        AUTO("auto", "自动"),
+        VULKAN("vulkan", "Vulkan（实验性）"),
         OPENGLES("opengles", "OpenGL ES");
 
         companion object {
             fun fromKey(key: String): Backend {
-                return entries.find { it.key == key } ?: AUTO
+                return entries.find { it.key == key } ?: OPENGLES
             }
         }
     }
 
+    // ===== MSAA 选项 =====
     val MSAA_OPTIONS = listOf(0, 2, 4, 8)
 
     private lateinit var prefs: SharedPreferences
@@ -63,10 +81,11 @@ object SettingsManager {
 
     private fun ensureInit() {
         if (!::prefs.isInitialized) {
-            throw IllegalStateException("SettingsManager not initialized.")
+            throw IllegalStateException("SettingsManager not initialized. Call init(context) first.")
         }
     }
 
+    // ===== 通用读写 =====
     fun getString(key: String, default: String): String {
         ensureInit()
         return prefs.getString(key, default) ?: default
@@ -107,6 +126,8 @@ object SettingsManager {
         prefs.edit().putFloat(key, value).apply()
     }
 
+    // ===== 类型安全的便捷方法 =====
+
     var backend: Backend
         get() = Backend.fromKey(getString(KEY_BACKEND, DEFAULT_BACKEND))
         set(value) = putString(KEY_BACKEND, value.key)
@@ -143,6 +164,9 @@ object SettingsManager {
         get() = getFloat(KEY_CUSTOM_SCALE, DEFAULT_CUSTOM_SCALE)
         set(value) = putFloat(KEY_CUSTOM_SCALE, value.coerceIn(0.5f, 1.5f))
 
+    /**
+     * 生成传递给原生渲染器的环境变量映射
+     */
     fun toEnvMap(): Map<String, String> {
         return mapOf(
             "JUSTR_BACKEND" to backend.key,
@@ -155,6 +179,9 @@ object SettingsManager {
         )
     }
 
+    /**
+     * 重置所有设置为默认值
+     */
     fun resetAll() {
         ensureInit()
         prefs.edit().clear().apply()
