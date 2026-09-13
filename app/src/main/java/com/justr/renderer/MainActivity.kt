@@ -20,7 +20,7 @@ import androidx.compose.ui.unit.sp
  *
  * 标签页式 UI：主页 + 设置
  * 实际渲染功能由原生库 libjustr_render.so 提供
- * 双后端架构：优先使用 Vulkan，设备不支持时自动回退 OpenGL ES 3.0
+ * 双后端架构：默认 OpenGL ES 3.0（稳定），Vulkan 为实验性（需 Zink 支持）
  * 支持 FSR 1.0 超分辨率
  */
 class MainActivity : ComponentActivity() {
@@ -122,8 +122,8 @@ fun HomeTab() {
                     fontWeight = FontWeight.Bold
                 )
                 HorizontalDivider()
-                InfoRow("优先", "Vulkan (WSI Swapchain)")
-                InfoRow("回退", "OpenGL ES 3.0")
+                InfoRow("默认后端", "OpenGL ES 3.0（稳定）")
+                InfoRow("实验后端", "Vulkan（需 Zink 支持）")
                 InfoRow("超分辨率", "FSR 1.0 (EASU + RCAS)")
             }
         }
@@ -228,7 +228,7 @@ fun RenderBackendSection() {
                 fontWeight = FontWeight.Bold
             )
             Text(
-                text = "选择图形 API，自动模式优先使用 Vulkan",
+                text = "选择图形 API，推荐使用 OpenGL ES（稳定）",
                 fontSize = 13.sp
             )
             HorizontalDivider()
@@ -255,9 +255,9 @@ fun RenderBackendSection() {
                         )
                         Text(
                             text = when (option) {
-                                SettingsManager.Backend.AUTO -> "优先 Vulkan，不支持时回退 OpenGL ES"
-                                SettingsManager.Backend.VULKAN -> "强制使用 Vulkan（需要设备支持）"
-                                SettingsManager.Backend.OPENGLES -> "强制使用 OpenGL ES 3.0"
+                                SettingsManager.Backend.AUTO -> "自动选择（推荐：OpenGL ES）"
+                                SettingsManager.Backend.VULKAN -> "Vulkan（实验性，需 Zink 支持）"
+                                SettingsManager.Backend.OPENGLES -> "OpenGL ES 3.0（稳定推荐）"
                             },
                             fontSize = 12.sp
                         )
